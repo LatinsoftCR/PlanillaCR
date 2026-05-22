@@ -1,6 +1,18 @@
-version: '3.8'
 
 services:
+  # Servicio SQL Server local para desarrollo
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: planillacr_sqlserver
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Latin123!}
+    ports:
+      - "14333:1433"
+    volumes:
+      - planillacr_sql_data:/var/opt/mssql
   # Servicio Web: Aplicación PHP + Apache con drivers SQL Server
   web:
     build:
@@ -8,6 +20,15 @@ services:
       dockerfile: Dockerfile
     container_name: planillacr_web
     restart: always
+    depends_on:
+      - sqlserver
+    environment:
+      DB_HOST: ${DB_HOST:-sqlserver,1433}
+      DB_NAME: ${DB_NAME:-PlanillaCR}
+      DB_USER: ${DB_USER:-sa}
+      DB_PASS: ${DB_PASS:-Latin123!}
     ports:
       - "8085:80"
-    
+
+volumes:
+  planillacr_sql_data:

@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.3-apache
 
 # Actualizar el sistema e instalar dependencias iniciales necesarias (curl, gnupg2, etc.)
 RUN apt-get update && apt-get install -y \

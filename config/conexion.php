@@ -7,8 +7,8 @@
 // Parámetros de conexión configurables (permiten leer variables de entorno en producción/Docker)
 $db_host = getenv('DB_HOST') ?: "172.25.2.3,1443";
 $db_name = getenv('DB_NAME') ?: "PlanillaCR";
-$db_user = getenv('DB_USER') !== false ? getenv('DB_USER') : "";
-$db_pass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : "";
+$db_user = getenv('DB_USER') !== false ? getenv('DB_USER') : "sa";
+$db_pass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : "Latin123";
 
 try {
     // Configuración del DSN de conexión
