@@ -12,7 +12,29 @@ services:
       - "8085:80"
     environment:
       # Configuración de base de datos leída por config/conexion.php
+      # Si se usa la base de datos de Docker de abajo, el host es 'db'
+      # Si se conecta a una base de datos externa, reemplaza con la IP/Host correspondiente
       - DB_HOST="172.25.2.3,1443"
       - DB_NAME=PlanillaCR
       - DB_USER=sa
       - DB_PASS=Latin123
+    depends_on:
+      - db
+
+  # Servicio de Base de Datos: Microsoft SQL Server (Opcional si usas una BD externa)
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: planillacr_db
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=PlanillaCR_SecurePass2026!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+volumes:
+  mssql_data:
+    driver: local
