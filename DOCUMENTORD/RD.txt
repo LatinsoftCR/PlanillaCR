@@ -1,0 +1,168 @@
+PROMPT MAESTRO ERP PLANILLAS CR
+Quiero desarrollar un sistema ERP de planillas para Costa Rica utilizando SQL Server y PHP.La arquitectura debe ser enterprise, altamente escalable, multiempresa y orientada a minimizar mantenimiento futuro.REGLAS IMPORTANTES:1. TODO debe ser parametrizable.2. Nunca quemar reglas legales en código.3. Todo cálculo legal debe depender de tablas de parámetros con vigencias.4. El sistema debe soportar:   - multiempresa   - multisucursal   - centros de costo   - destajos   - salarios fijos   - comisiones   - jornadas especiales   - incapacidades   - liquidaciones   - vacaciones   - aguinaldo   - SICERE   - integración bancaria   - integración contable   - workflow aprobación5. SQL Server debe contener:   - tablas   - índices   - vistas   - funciones   - stored procedures   - auditoría   - históricos   - snapshots legales6. PHP solo manejará:   - UI   - AJAX   - DataTables   - autenticación   - reportes7. Toda lógica fuerte debe vivir en SQL Server.8. Todas las tablas deben incluir:   - Estado   - FechaCreacion   - UsuarioCreacion   - FechaModificacion   - UsuarioModificacion9. Toda operación crítica debe registrarse en bitácora.10. El sistema debe estar preparado para crecimiento futuro aunque inicialmente no se utilicen todos los módulos.11. Todos los nombres deben ser consistentes y empresariales.12. Utilizar buenas prácticas SQL Server 2012+.13. Evitar recalcular históricos; usar acumulados y snapshots.14. Las vistas deben facilitar frontend y reportes.15. Los SP deben ser desacoplados y reutilizables.Cuando generes módulos:- crea estructura completa- relaciones- índices- vistas necesarias- funciones necesarias- SP necesarios- recomendaciones futuras- consideraciones legales CR- optimización- auditoría- seguridad
+
+Cómo trabajar correctamente con IA
+Ahora usted NO pide:
+❌ “hágame vacaciones”
+Usted pide:
+
+EJEMPLO CORRECTO
+Usando la arquitectura maestra del ERP de planillas CR:Desarrolla el módulo de vacaciones enterprise completo para SQL Server.Incluye:- tablas- históricos- acumulados- movimientos- saldos- auditoría- vistas- funciones- stored procedures- índices- reglas Costa Rica- cálculo proporcional- vacaciones vencidas- rebajos automáticos- integración planillaEl diseño debe minimizar mantenimiento futuro.
+
+PROMPT PARA SP
+Genera el stored procedure sp_GenerarPlanilla siguiendo la arquitectura enterprise del ERP.Debe:- usar transacciones- manejo TRY CATCH- bitácora- evitar duplicados- permitir reproceso- usar acumulados- soportar destajos- soportar múltiples rubros- ser escalable- incluir comentarios- optimizado SQL Server
+
+PROMPT PARA MOTOR DE FÓRMULAS
+Diseña un motor dinámico de fórmulas para SQL Server orientado a planillas CR.Debe permitir:- fórmulas parametrizadas- variables dinámicas- prioridades- dependencias entre rubros- vigencias- reglas legales- expresiones IF- versionado- auditoríaIncluye:- tablas- funciones- SP- ejemplos reales- optimización- seguridad
+
+PROMPT PARA SICERE
+Desarrolla el módulo SICERE completo para Costa Rica.Incluye:- estructura tablas- exportación TXT- validaciones CCSS- jornadas- salarios- incapacidades- movimientos- auditoría- históricos- stored procedures- vistasDebe ser enterprise y parametrizable.
+
+PROMPT PARA CONTABILIDAD
+Diseña integración contable automática para planillas.Debe soportar:- cuentas contables por rubro- centros costo- pólizas automáticas- débito/crédito- exportación ERP- multiempresa- auditoría- reversión asientosIncluye:- tablas- vistas- funciones- stored procedures
+
+PROMPT PARA AUDITORÍA
+Diseña arquitectura de auditoría enterprise para ERP de planillas.Debe incluir:- snapshots- históricos- bitácoras- control cambios salariales- control IBAN- trazabilidad completa- auditoría SP críticos- auditoría cálculos legales
+
+Lo MÁS importante
+Cuando use IA:
+SIEMPRE decir:
+No generes soluciones simplificadas.Quiero arquitectura enterprise escalable.
+
+También SIEMPRE decir:
+No omitas:- índices- relaciones- auditoría- históricos- vistas- funciones- SP auxiliares
+
+Estrategia REAL que recomiendo
+FASES
+Fase 1 — Arquitectura
+
+
+BD
+
+
+seguridad
+
+
+auditoría
+
+
+configuración
+
+
+multiempresa
+
+
+
+Fase 2 — RRHH
+
+
+empleados
+
+
+puestos
+
+
+jornadas
+
+
+históricos
+
+
+
+Fase 3 — Planillas
+
+
+rubros
+
+
+destajos
+
+
+cálculo
+
+
+acumulados
+
+
+
+Fase 4 — Legal CR
+
+
+CCSS
+
+
+renta
+
+
+SICERE
+
+
+
+Fase 5 — Beneficios
+
+
+vacaciones
+
+
+aguinaldo
+
+
+liquidaciones
+
+
+
+Fase 6 — Enterprise
+
+
+workflow
+
+
+contabilidad
+
+
+bancos
+
+
+APIs
+
+
+
+Recomendación IMPORTANTÍSIMA
+Mantenga SIEMPRE un:
+DOCUMENTO MAESTRO ARQUITECTURA
+donde copie:
+
+
+nombres tablas
+
+
+naming
+
+
+reglas
+
+
+módulos
+
+
+convenciones
+
+
+Porque si no:
+la IA empieza a inventar estructuras distintas.
+
+Otra recomendación MUY fuerte
+Cuando genere algo con IA:
+✅ primero estructura
+✅ luego lógica
+✅ luego optimización
+✅ luego auditoría
+NO todo junto.
+
+Mi recomendación REAL
+Usted sí puede construir un ERP bastante serio usando IA si:
+✅ mantiene arquitectura consistente
+✅ trabaja por módulos
+✅ obliga a IA a pensar enterprise
+✅ evita prompts genéricos
+✅ documenta naming y reglas desde inicio.

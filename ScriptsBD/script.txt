@@ -1,0 +1,1371 @@
+/*
+=====================================================
+ SISTEMA ERP PLANILLAS COSTA RICA
+ SQL SERVER 2012+ (EDICIÓN ENTERPRISE / STANDARD / EXPRESS)
+ INSTANCIA POR DEFECTO RECOMENDADA: ALLISON-PC\SQLEXPRESS
+=====================================================
+*/
+
+/*===================================================
+ 1. CREAR BASE DE DATOS
+===================================================*/
+
+IF DB_ID('PlanillaCR') IS NOT NULL
+BEGIN
+    ALTER DATABASE PlanillaCR SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE PlanillaCR;
+END
+GO
+
+CREATE DATABASE PlanillaCR COLLATE Modern_Spanish_CI_AS
+GO
+
+USE PlanillaCR
+GO
+
+SET LANGUAGE Spanish
+GO
+
+/*===================================================
+ CONFIGURACIÓN DE BASE DE DATOS
+===================================================*/
+
+ALTER DATABASE PlanillaCR SET RECOVERY SIMPLE
+GO
+
+/*===================================================
+ 2. CREACIÓN DE TABLAS (CON AUDITORÍA ESTÁNDAR)
+===================================================*/
+
+-- TABLA EMPRESA
+IF OBJECT_ID('Empresa') IS NOT NULL DROP TABLE Empresa
+GO
+
+CREATE TABLE Empresa (
+    CodEmpresa              INT IDENTITY(1,1) PRIMARY KEY,
+    Nombre                  VARCHAR(150) NOT NULL,
+    NombreComercial         VARCHAR(150),
+    CedulaJuridica          VARCHAR(20),
+    Telefono                VARCHAR(50),
+    Correo                  VARCHAR(150),
+    Direccion               VARCHAR(500),
+    CodigoCCSS              VARCHAR(50),
+    CodigoINS               VARCHAR(50),
+    Moneda                  VARCHAR(10) DEFAULT 'CRC',
+    
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL
+)
+GO
+
+-- SUCURSALES
+IF OBJECT_ID('Sucursal') IS NOT NULL DROP TABLE Sucursal
+GO
+
+CREATE TABLE Sucursal (
+    CodSucursal             INT IDENTITY(1,1) PRIMARY KEY,
+    CodEmpresa              INT NOT NULL,
+    Nombre                  VARCHAR(150) NOT NULL,
+    Direccion               VARCHAR(500),
+    Telefono                VARCHAR(50),
+    
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodEmpresa) REFERENCES Empresa(CodEmpresa)
+)
+GO
+
+-- DEPARTAMENTOS
+IF OBJECT_ID('Departamento') IS NOT NULL DROP TABLE Departamento
+GO
+
+CREATE TABLE Departamento (
+    CodDepartamento         INT IDENTITY(1,1) PRIMARY KEY,
+    CodEmpresa              INT NOT NULL,
+    Descripcion             VARCHAR(150) NOT NULL,
+    
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodEmpresa) REFERENCES Empresa(CodEmpresa)
+)
+GO
+
+-- PUESTOS
+IF OBJECT_ID('Puesto') IS NOT NULL DROP TABLE Puesto
+GO
+
+CREATE TABLE Puesto (
+    CodPuesto               INT IDENTITY(1,1) PRIMARY KEY,
+    CodEmpresa              INT NOT NULL,
+    Descripcion             VARCHAR(150) NOT NULL,
+    
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodEmpresa) REFERENCES Empresa(CodEmpresa)
+)
+GO
+
+-- HORARIOS
+IF OBJECT_ID('Horario') IS NOT NULL DROP TABLE Horario
+GO
+
+CREATE TABLE Horario (
+    CodHorario              INT IDENTITY(1,1) PRIMARY KEY,
+    CodEmpresa              INT NOT NULL,
+    Descripcion             VARCHAR(150) NOT NULL,
+    HoraEntrada             TIME NOT NULL,
+    HoraSalida              TIME NOT NULL,
+    HorasDia                DECIMAL(18,2) NOT NULL,
+    
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodEmpresa) REFERENCES Empresa(CodEmpresa)
+)
+GO
+
+-- EMPLEADOS
+IF OBJECT_ID('Empleado') IS NOT NULL DROP TABLE Empleado
+GO
+
+CREATE TABLE Empleado (
+    CodEmpleado             INT IDENTITY(1,1) PRIMARY KEY,
+    CodEmpresa              INT NOT NULL,
+    CodSucursal             INT NOT NULL,
+    CodDepartamento         INT NOT NULL,
+    CodPuesto               INT NOT NULL,
+    CodHorario              INT NOT NULL,
+
+    Identificacion          VARCHAR(20) NOT NULL UNIQUE,
+    Nombre                  VARCHAR(150) NOT NULL,
+    Apellido1               VARCHAR(150) NOT NULL,
+    Apellido2               VARCHAR(150),
+
+    FechaNacimiento         DATE NOT NULL,
+    FechaIngreso            DATE NOT NULL,
+    FechaSalida             DATE NULL,
+
+    Telefono                VARCHAR(50),
+    Correo                  VARCHAR(150) NOT NULL,
+    Direccion               VARCHAR(500),
+
+    TipoSalario             VARCHAR(20) NOT NULL, -- MENSUAL, QUINCENAL, SEMANAL, HORA, DESTAJO
+    SalarioBase             DECIMAL(18,2) NOT NULL,
+
+    Banco                   VARCHAR(100),
+    CuentaIBAN              VARCHAR(100),
+    
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodEmpresa) REFERENCES Empresa(CodEmpresa),
+    FOREIGN KEY (CodSucursal) REFERENCES Sucursal(CodSucursal),
+    FOREIGN KEY (CodDepartamento) REFERENCES Departamento(CodDepartamento),
+    FOREIGN KEY (CodPuesto) REFERENCES Puesto(CodPuesto),
+    FOREIGN KEY (CodHorario) REFERENCES Horario(CodHorario)
+)
+GO
+
+-- USUARIOS (NUEVO - SEGURIDAD ENTERPRISE)
+IF OBJECT_ID('Usuario') IS NOT NULL DROP TABLE Usuario
+GO
+
+CREATE TABLE Usuario (
+    CodUsuario              INT IDENTITY(1,1) PRIMARY KEY,
+    CodEmpleado             INT NULL,
+    Username                VARCHAR(100) NOT NULL UNIQUE,
+    PasswordHash            VARCHAR(255) NOT NULL,
+    Correo                  VARCHAR(150) NOT NULL UNIQUE,
+    Rol                     VARCHAR(50) DEFAULT 'EMPLEADO', -- ADMINISTRADOR, RRHH, EMPLEADO
+
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodEmpleado) REFERENCES Empleado(CodEmpleado)
+)
+GO
+
+-- TOKENS DE RECUPERACIÓN DE CONTRASEÑA (NUEVO - SEGURIDAD)
+IF OBJECT_ID('UsuarioToken') IS NOT NULL DROP TABLE UsuarioToken
+GO
+
+CREATE TABLE UsuarioToken (
+    CodToken                INT IDENTITY(1,1) PRIMARY KEY,
+    CodUsuario              INT NOT NULL,
+    Token                   VARCHAR(255) NOT NULL UNIQUE,
+    FechaExpiracion         DATETIME NOT NULL,
+    Usado                   BIT DEFAULT 0,
+
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodUsuario) REFERENCES Usuario(CodUsuario)
+)
+GO
+
+-- TIPOS PLANILLA
+IF OBJECT_ID('TipoPlanilla') IS NOT NULL DROP TABLE TipoPlanilla
+GO
+
+CREATE TABLE TipoPlanilla (
+    CodTipoPlanilla         INT IDENTITY(1,1) PRIMARY KEY,
+    Descripcion             VARCHAR(100) NOT NULL,
+
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL
+)
+GO
+
+-- PLANILLA (ENCABEZADO)
+IF OBJECT_ID('Planilla') IS NOT NULL DROP TABLE Planilla
+GO
+
+CREATE TABLE Planilla (
+    CodPlanilla             INT IDENTITY(1,1) PRIMARY KEY,
+    CodEmpresa              INT NOT NULL,
+    CodTipoPlanilla         INT NOT NULL,
+
+    FechaInicio             DATE NOT NULL,
+    FechaFin                DATE NOT NULL,
+    FechaPago               DATE NOT NULL,
+    
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ABIERTA', -- ABIERTA, PROCESADA, APLICADA, ANULADA
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodEmpresa) REFERENCES Empresa(CodEmpresa),
+    FOREIGN KEY (CodTipoPlanilla) REFERENCES TipoPlanilla(CodTipoPlanilla)
+)
+GO
+
+-- RUBROS
+IF OBJECT_ID('RubroPlanilla') IS NOT NULL DROP TABLE RubroPlanilla
+GO
+
+CREATE TABLE RubroPlanilla (
+    CodRubro                INT IDENTITY(1,1) PRIMARY KEY,
+    Codigo                  VARCHAR(20) NOT NULL UNIQUE,
+    Descripcion             VARCHAR(150) NOT NULL,
+    Tipo                    VARCHAR(20) NOT NULL, -- DEVENGO, DEDUCCION
+    Prioridad               INT DEFAULT 0,
+
+    AfectaCCSS              BIT DEFAULT 0,
+    AfectaRenta             BIT DEFAULT 0,
+    AfectaVacaciones        BIT DEFAULT 0,
+    AfectaAguinaldo         BIT DEFAULT 0,
+
+    Formula                 VARCHAR(MAX) NULL,
+    
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL
+)
+GO
+
+-- DESTAJOS
+IF OBJECT_ID('Destajo') IS NOT NULL DROP TABLE Destajo
+GO
+
+CREATE TABLE Destajo (
+    Codigo                  INT IDENTITY(1,1) PRIMARY KEY,
+    CodEmpresa              INT NOT NULL,
+    CodEmpleado             INT NOT NULL,
+
+    Fecha                   DATE NOT NULL,
+    TipoTrabajo             VARCHAR(150) NOT NULL,
+
+    Cantidad                DECIMAL(18,2) NOT NULL,
+    Tarifa                  DECIMAL(18,2) NOT NULL,
+    Monto                   DECIMAL(18,2) NOT NULL,
+
+    Referencia              VARCHAR(100),
+    Observacion             VARCHAR(500),
+    
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'PENDIENTE', -- PENDIENTE, PROCESADO, ANULADO
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodEmpresa) REFERENCES Empresa(CodEmpresa),
+    FOREIGN KEY (CodEmpleado) REFERENCES Empleado(CodEmpleado)
+)
+GO
+
+-- PLANILLA DETALLE
+IF OBJECT_ID('PlanillaDetalle') IS NOT NULL DROP TABLE PlanillaDetalle
+GO
+
+CREATE TABLE PlanillaDetalle (
+    Codigo                  INT IDENTITY(1,1) PRIMARY KEY,
+
+    CodPlanilla             INT NOT NULL,
+    CodEmpleado             INT NOT NULL,
+    CodRubro                INT NOT NULL,
+
+    Cantidad                DECIMAL(18,2) NOT NULL,
+    Monto                   DECIMAL(18,2) NOT NULL,
+
+    BaseCalculo             DECIMAL(18,2) NOT NULL,
+    Porcentaje              DECIMAL(18,4) NOT NULL,
+
+    FormulaAplicada         VARCHAR(MAX) NULL,
+
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodPlanilla) REFERENCES Planilla(CodPlanilla),
+    FOREIGN KEY (CodEmpleado) REFERENCES Empleado(CodEmpleado),
+    FOREIGN KEY (CodRubro) REFERENCES RubroPlanilla(CodRubro)
+)
+GO
+
+-- PARÁMETROS CCSS
+IF OBJECT_ID('ParametroCCSS') IS NOT NULL DROP TABLE ParametroCCSS
+GO
+
+CREATE TABLE ParametroCCSS (
+    Codigo                  INT IDENTITY(1,1) PRIMARY KEY,
+
+    VigenciaDesde           DATE NOT NULL,
+    VigenciaHasta           DATE NOT NULL,
+
+    SEMPatrono              DECIMAL(18,4) NOT NULL,
+    SEMObrero               DECIMAL(18,4) NOT NULL,
+
+    IVMPatrono              DECIMAL(18,4) NOT NULL,
+    IVMObrero               DECIMAL(18,4) NOT NULL,
+
+    BancoPopular            DECIMAL(18,4) NOT NULL,
+    INS                     DECIMAL(18,4) NOT NULL,
+
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL
+)
+GO
+
+-- TABLA RENTA
+IF OBJECT_ID('TablaRenta') IS NOT NULL DROP TABLE TablaRenta
+GO
+
+CREATE TABLE TablaRenta (
+    Codigo                  INT IDENTITY(1,1) PRIMARY KEY,
+
+    VigenciaDesde           DATE NOT NULL,
+    VigenciaHasta           DATE NOT NULL,
+
+    DesdeMonto              DECIMAL(18,2) NOT NULL,
+    HastaMonto              DECIMAL(18,2) NOT NULL,
+
+    Porcentaje              DECIMAL(18,4) NOT NULL,
+
+    Exceso                  DECIMAL(18,2) NOT NULL,
+    Base                    DECIMAL(18,2) NOT NULL,
+
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL
+)
+GO
+
+-- VACACIONES
+IF OBJECT_ID('Vacaciones') IS NOT NULL DROP TABLE Vacaciones
+GO
+
+CREATE TABLE Vacaciones (
+    Codigo                  INT IDENTITY(1,1) PRIMARY KEY,
+    CodEmpleado             INT NOT NULL,
+
+    PeriodoInicio           DATE NOT NULL,
+    PeriodoFin              DATE NOT NULL,
+
+    DiasGanados             DECIMAL(18,2) NOT NULL,
+    DiasTomados             DECIMAL(18,2) NOT NULL,
+    Saldo                   DECIMAL(18,2) NOT NULL,
+
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodEmpleado) REFERENCES Empleado(CodEmpleado)
+)
+GO
+
+-- AGUINALDO
+IF OBJECT_ID('Aguinaldo') IS NOT NULL DROP TABLE Aguinaldo
+GO
+
+CREATE TABLE Aguinaldo (
+    Codigo                  INT IDENTITY(1,1) PRIMARY KEY,
+    Periodo                 VARCHAR(20) NOT NULL, -- Ej: "2025-2026"
+    CodEmpleado             INT NOT NULL,
+    Acumulado               DECIMAL(18,2) NOT NULL,
+
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL,
+
+    FOREIGN KEY (CodEmpleado) REFERENCES Empleado(CodEmpleado)
+)
+GO
+
+-- BITÁCORA
+IF OBJECT_ID('BitacoraPlanilla') IS NOT NULL DROP TABLE BitacoraPlanilla
+GO
+
+CREATE TABLE BitacoraPlanilla (
+    Codigo                  INT IDENTITY(1,1) PRIMARY KEY,
+    Fecha                   DATETIME DEFAULT GETDATE(),
+    Usuario                 VARCHAR(100) NOT NULL,
+    Proceso                 VARCHAR(100) NOT NULL,
+    Detalle                 VARCHAR(MAX) NOT NULL
+)
+GO
+
+-- CONFIGURACIÓN SISTEMA
+IF OBJECT_ID('ConfiguracionSistema') IS NOT NULL DROP TABLE ConfiguracionSistema
+GO
+
+CREATE TABLE ConfiguracionSistema (
+    Codigo                  INT IDENTITY(1,1) PRIMARY KEY,
+    Clave                   VARCHAR(100) NOT NULL UNIQUE,
+    Valor                   VARCHAR(500) NOT NULL,
+
+    -- Campos de Auditoría Estándar
+    Estado                  VARCHAR(20) DEFAULT 'ACTIVO',
+    FechaCreacion           DATETIME DEFAULT GETDATE(),
+    UsuarioCreacion         VARCHAR(100) DEFAULT 'SISTEMA',
+    FechaModificacion       DATETIME NULL,
+    UsuarioModificacion     VARCHAR(100) NULL
+)
+GO
+
+
+/*===================================================
+ 3. ÍNDICES DE BASE DE DATOS
+===================================================*/
+
+IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Empleado_Identificacion')
+    DROP INDEX IX_Empleado_Identificacion ON Empleado
+GO
+CREATE INDEX IX_Empleado_Identificacion ON Empleado(Identificacion)
+GO
+
+IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Destajo_Empleado_Fecha')
+    DROP INDEX IX_Destajo_Empleado_Fecha ON Destajo
+GO
+CREATE INDEX IX_Destajo_Empleado_Fecha ON Destajo(CodEmpleado, Fecha)
+GO
+
+IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_PlanillaDetalle_Planilla')
+    DROP INDEX IX_PlanillaDetalle_Planilla ON PlanillaDetalle
+GO
+CREATE INDEX IX_PlanillaDetalle_Planilla ON PlanillaDetalle(CodPlanilla)
+GO
+
+IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Usuario_Username')
+    DROP INDEX IX_Usuario_Username ON Usuario
+GO
+CREATE INDEX IX_Usuario_Username ON Usuario(Username)
+GO
+
+IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_UsuarioToken_Token')
+    DROP INDEX IX_UsuarioToken_Token ON UsuarioToken
+GO
+CREATE INDEX IX_UsuarioToken_Token ON UsuarioToken(Token)
+GO
+
+
+/*===================================================
+ 4. DATOS DE PARAMETRIZACIÓN E INICIALIZACIÓN
+===================================================*/
+
+-- TIPOS PLANILLA
+INSERT INTO TipoPlanilla (Descripcion, UsuarioCreacion)
+VALUES
+('Semanal', 'SISTEMA'),
+('Quincenal', 'SISTEMA'),
+('Mensual', 'SISTEMA'),
+('Destajo', 'SISTEMA')
+GO
+
+-- RUBROS PLANILLA
+INSERT INTO RubroPlanilla (Codigo, Descripcion, Tipo, Prioridad, AfectaCCSS, AfectaRenta, AfectaVacaciones, AfectaAguinaldo, Formula, UsuarioCreacion)
+VALUES
+('SAL', 'Salario Base', 'DEVENGO', 1, 1, 1, 1, 1, NULL, 'SISTEMA'),
+('DES', 'Destajo', 'DEVENGO', 2, 1, 1, 1, 1, NULL, 'SISTEMA'),
+('HEX', 'Horas Extra', 'DEVENGO', 3, 1, 1, 1, 1, NULL, 'SISTEMA'),
+('COM', 'Comisión', 'DEVENGO', 4, 1, 1, 1, 1, NULL, 'SISTEMA'),
+('CCSS', 'Deducción CCSS Obrero', 'DEDUCCION', 10, 0, 0, 0, 0, 'dbo.fn_CalcularCCSS', 'SISTEMA'),
+('REN', 'Retención Impuesto Renta', 'DEDUCCION', 11, 0, 0, 0, 0, 'dbo.fn_CalcularRenta', 'SISTEMA'),
+('BP', 'Banco Popular Obrero', 'DEDUCCION', 12, 0, 0, 0, 0, NULL, 'SISTEMA')
+GO
+
+-- CONFIGURACIONES DEL SISTEMA
+INSERT INTO ConfiguracionSistema (Clave, Valor, UsuarioCreacion)
+VALUES
+('HORAS_SEMANA', '48', 'SISTEMA'),
+('DECIMALES_PLANILLA', '2', 'SISTEMA'),
+('MONEDA', 'CRC', 'SISTEMA')
+GO
+
+-- PARÁMETROS CCSS BASE COSTA RICA (VIGENCIA 2026)
+INSERT INTO ParametroCCSS (VigenciaDesde, VigenciaHasta, SEMPatrono, SEMObrero, IVMPatrono, IVMObrero, BancoPopular, INS, UsuarioCreacion)
+VALUES
+('2026-01-01', '2026-12-31', 9.25, 5.50, 5.42, 4.17, 1.00, 1.50, 'SISTEMA')
+GO
+
+-- TABLA DE IMPUESTO SOBRE LA RENTA COSTA RICA (VIGENCIA 2026)
+INSERT INTO TablaRenta (VigenciaDesde, VigenciaHasta, DesdeMonto, HastaMonto, Porcentaje, Exceso, Base, UsuarioCreacion)
+VALUES
+('2026-01-01', '2026-12-31', 0, 941000, 0, 0, 0, 'SISTEMA'),
+('2026-01-01', '2026-12-31', 941001, 1381000, 10, 941000, 0, 'SISTEMA'),
+('2026-01-01', '2026-12-31', 1381001, 2423000, 15, 1381000, 44000, 'SISTEMA'),
+('2026-01-01', '2026-12-31', 2423001, 4845000, 20, 2423000, 200300, 'SISTEMA'),
+('2026-01-01', '2026-12-31', 4845001, 99999999, 25, 4845000, 684700, 'SISTEMA')
+GO
+
+
+/*===================================================
+ 5. DATOS DE PRUEBA (EMPRESA, EMPLEADO, USUARIO ADMIN)
+===================================================*/
+
+INSERT INTO Empresa (Nombre, NombreComercial, CedulaJuridica, Telefono, Correo, Direccion, CodigoCCSS, CodigoINS, Moneda, UsuarioCreacion)
+VALUES ('Corporación Allison S.A.', 'Allison Software', '3-101-998877', '2233-4455', 'soporte@allison.com', 'San José, Costa Rica', 'CCSS-8899', 'INS-7722', 'CRC', 'SISTEMA')
+GO
+
+INSERT INTO Sucursal (CodEmpresa, Nombre, Direccion, Telefono, UsuarioCreacion)
+VALUES (1, 'Oficinas Centrales', 'San José, Paseo Colón', '2233-4456', 'SISTEMA')
+GO
+
+INSERT INTO Departamento (CodEmpresa, Descripcion, UsuarioCreacion)
+VALUES (1, 'Tecnología e Informática', 'SISTEMA')
+GO
+
+INSERT INTO Puesto (CodEmpresa, Descripcion, UsuarioCreacion)
+VALUES (1, 'Administrador del Sistema', 'SISTEMA')
+GO
+
+INSERT INTO Horario (CodEmpresa, Descripcion, HoraEntrada, HoraSalida, HorasDia, UsuarioCreacion)
+VALUES (1, 'Jornada Diurna Regular', '08:00:00', '17:00:00', 8.00, 'SISTEMA')
+GO
+
+-- Empleado Administrador de Pruebas
+INSERT INTO Empleado (CodEmpresa, CodSucursal, CodDepartamento, CodPuesto, CodHorario, Identificacion, Nombre, Apellido1, Apellido2, FechaNacimiento, FechaIngreso, Telefono, Correo, Direccion, TipoSalario, SalarioBase, Banco, CuentaIBAN, UsuarioCreacion)
+VALUES (1, 1, 1, 1, 1, '1-1111-1111', 'Admin', 'Planilla', 'Costa Rica', '1990-05-15', '2026-01-01', '8888-8888', 'admin@planillacr.com', 'San José, Costa Rica', 'MENSUAL', 1250000.00, 'BAC Credomatic', 'CR99010203040506070809', 'SISTEMA')
+GO
+
+-- Usuario Administrador de Pruebas (Contraseña de acceso inicial: Admin123*)
+-- El hash de contraseña equivale a BCRYPT de "Admin123*"
+INSERT INTO Usuario (CodEmpleado, Username, PasswordHash, Correo, Rol, UsuarioCreacion)
+VALUES (1, 'admin', '$2y$10$tMh4c6uI.g73u3xRk1m3xe7p1hIec1c/4P0Jc.b70m2p96tBwVpY2', 'admin@planillacr.com', 'ADMINISTRADOR', 'SISTEMA')
+GO
+
+
+/*===================================================
+ 6. VISTAS DE NEGOCIO (PREPARADAS PARA FRONTEND)
+===================================================*/
+
+-- VISTA EMPLEADO COMPLETO
+IF OBJECT_ID('vw_EmpleadoCompleto') IS NOT NULL DROP VIEW vw_EmpleadoCompleto
+GO
+
+CREATE VIEW vw_EmpleadoCompleto
+AS
+SELECT
+    e.CodEmpleado,
+    e.CodEmpresa,
+    emp.Nombre AS Empresa,
+    e.Identificacion,
+    e.Nombre,
+    e.Apellido1,
+    e.Apellido2,
+    e.Nombre + ' ' + e.Apellido1 + ISNULL(' ' + e.Apellido2, '') AS NombreCompleto,
+    e.Correo,
+    e.Telefono,
+    d.Descripcion AS Departamento,
+    p.Descripcion AS Puesto,
+    s.Nombre AS Sucursal,
+    e.TipoSalario,
+    e.SalarioBase,
+    e.Estado,
+    e.FechaIngreso,
+    e.CuentaContable
+FROM Empleado e
+LEFT JOIN Empresa emp ON e.CodEmpresa = emp.CodEmpresa
+LEFT JOIN Departamento d ON e.CodDepartamento = d.CodDepartamento
+LEFT JOIN Puesto p ON e.CodPuesto = p.CodPuesto
+LEFT JOIN Sucursal s ON e.CodSucursal = s.CodSucursal
+GO
+
+-- VISTA PLANILLA RESUMEN
+IF OBJECT_ID('vw_PlanillaResumen') IS NOT NULL DROP VIEW vw_PlanillaResumen
+GO
+
+CREATE VIEW vw_PlanillaResumen
+AS
+SELECT
+    pd.CodPlanilla,
+    pd.CodEmpleado,
+    e.Nombre + ' ' + e.Apellido1 AS Empleado,
+    SUM(CASE WHEN r.Tipo = 'DEVENGO' THEN pd.Monto ELSE 0 END) AS TotalDevengos,
+    SUM(CASE WHEN r.Tipo = 'DEDUCCION' THEN pd.Monto ELSE 0 END) AS TotalDeducciones,
+    SUM(CASE WHEN r.Tipo = 'DEVENGO' THEN pd.Monto ELSE 0 END) -
+    SUM(CASE WHEN r.Tipo = 'DEDUCCION' THEN pd.Monto ELSE 0 END) AS Neto
+FROM PlanillaDetalle pd
+INNER JOIN Empleado e ON pd.CodEmpleado = e.CodEmpleado
+INNER JOIN RubroPlanilla r ON pd.CodRubro = r.CodRubro
+GROUP BY
+    pd.CodPlanilla,
+    pd.CodEmpleado,
+    e.Nombre,
+    e.Apellido1
+GO
+
+
+/*===================================================
+ 7. FUNCIONES DE CÁLCULO LEGAL
+===================================================*/
+
+-- CALCULAR CCSS OBRERO (5.5% SEM + 4.17% IVM + 1% BP = 10.67% total obrero en Costa Rica)
+IF OBJECT_ID('fn_CalcularCCSS') IS NOT NULL DROP FUNCTION fn_CalcularCCSS
+GO
+
+CREATE FUNCTION fn_CalcularCCSS
+(
+    @Salario DECIMAL(18,2)
+)
+RETURNS DECIMAL(18,2)
+AS
+BEGIN
+    DECLARE @Porcentaje DECIMAL(18,4)
+    DECLARE @Resultado DECIMAL(18,2)
+
+    SELECT TOP 1
+        @Porcentaje = SEMObrero + IVMObrero + BancoPopular
+    FROM ParametroCCSS
+    WHERE GETDATE() BETWEEN VigenciaDesde AND VigenciaHasta AND Estado = 'ACTIVO'
+
+    -- Fallback si no hay parámetros vigentes en BD
+    IF @Porcentaje IS NULL
+        SET @Porcentaje = 10.6700
+
+    SET @Resultado = @Salario * (@Porcentaje / 100.00)
+    RETURN ROUND(@Resultado, 2)
+END
+GO
+
+-- CALCULAR RETENCIÓN DE IMPUESTO SOBRE LA RENTA
+IF OBJECT_ID('fn_CalcularRenta') IS NOT NULL DROP FUNCTION fn_CalcularRenta
+GO
+
+CREATE FUNCTION fn_CalcularRenta
+(
+    @Salario DECIMAL(18,2)
+)
+RETURNS DECIMAL(18,2)
+AS
+BEGIN
+    DECLARE @Resultado DECIMAL(18,2) = 0
+    DECLARE @Porcentaje DECIMAL(18,4)
+    DECLARE @Exceso DECIMAL(18,2)
+    DECLARE @Base DECIMAL(18,2)
+
+    SELECT TOP 1
+        @Porcentaje = Porcentaje,
+        @Exceso = Exceso,
+        @Base = Base
+    FROM TablaRenta
+    WHERE @Salario BETWEEN DesdeMonto AND HastaMonto AND Estado = 'ACTIVO'
+
+    IF @Porcentaje IS NOT NULL
+    BEGIN
+        SET @Resultado = ((@Salario - @Exceso) * (@Porcentaje / 100.00)) + @Base
+    END
+
+    IF @Resultado < 0 OR @Resultado IS NULL
+        SET @Resultado = 0
+
+    RETURN ROUND(@Resultado, 2)
+END
+GO
+
+
+/*===================================================
+ 8. STORED PROCEDURES DE NEGOCIO (PLANILLA)
+===================================================*/
+
+-- PROCESO GENERAR PLANILLA
+IF OBJECT_ID('sp_GenerarPlanilla') IS NOT NULL DROP PROCEDURE sp_GenerarPlanilla
+GO
+
+CREATE PROCEDURE sp_GenerarPlanilla
+(
+    @CodEmpresa INT,
+    @CodTipoPlanilla INT,
+    @FechaInicio DATE,
+    @FechaFin DATE,
+    @FechaPago DATE,
+    @Usuario VARCHAR(100)
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET LANGUAGE Spanish;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @CodPlanilla INT
+
+        -- 1. Insertar cabecera de la Planilla
+        INSERT INTO Planilla (CodEmpresa, CodTipoPlanilla, FechaInicio, FechaFin, FechaPago, Estado, UsuarioCreacion)
+        VALUES (@CodEmpresa, @CodTipoPlanilla, @FechaInicio, @FechaFin, @FechaPago, 'ABIERTA', @Usuario)
+
+        SET @CodPlanilla = SCOPE_IDENTITY()
+
+        -- 2. Cargar salarios base de empleados activos de forma automática
+        INSERT INTO PlanillaDetalle (CodPlanilla, CodEmpleado, CodRubro, Cantidad, Monto, BaseCalculo, Porcentaje, FormulaAplicada, UsuarioCreacion)
+        SELECT 
+            @CodPlanilla,
+            e.CodEmpleado,
+            r.CodRubro,
+            1.00,
+            e.SalarioBase,
+            e.SalarioBase,
+            0.00,
+            'SALARIO BASE MANUAL',
+            @Usuario
+        FROM Empleado e
+        CROSS JOIN RubroPlanilla r
+        WHERE e.CodEmpresa = @CodEmpresa 
+          AND e.Estado = 'ACTIVO'
+          AND r.Codigo = 'SAL'
+
+        -- 3. Cargar acumulación de Destajos pendientes en este rango de fechas
+        INSERT INTO PlanillaDetalle (CodPlanilla, CodEmpleado, CodRubro, Cantidad, Monto, BaseCalculo, Porcentaje, FormulaAplicada, UsuarioCreacion)
+        SELECT
+            @CodPlanilla,
+            e.CodEmpleado,
+            r.CodRubro,
+            ISNULL(SUM(d.Cantidad), 0),
+            ISNULL(SUM(d.Monto), 0),
+            ISNULL(SUM(d.Monto), 0),
+            0.00,
+            'DESTAJOS PROCESADOS',
+            @Usuario
+        FROM Empleado e
+        INNER JOIN RubroPlanilla r ON r.Codigo = 'DES'
+        INNER JOIN Destajo d ON e.CodEmpleado = d.CodEmpleado
+        WHERE e.CodEmpresa = @CodEmpresa 
+          AND e.Estado = 'ACTIVO'
+          AND d.Estado = 'PENDIENTE'
+          AND d.Fecha BETWEEN @FechaInicio AND @FechaFin
+        GROUP BY e.CodEmpleado, r.CodRubro
+
+        -- Actualizar estado de destajos a Procesados
+        UPDATE Destajo
+        SET Estado = 'PROCESADO',
+            FechaModificacion = GETDATE(),
+            UsuarioModificacion = @Usuario
+        WHERE Estado = 'PENDIENTE'
+          AND Fecha BETWEEN @FechaInicio AND @FechaFin
+          AND CodEmpleado IN (SELECT CodEmpleado FROM Empleado WHERE CodEmpresa = @CodEmpresa)
+
+        -- 4. Cargar acumulación de Horas Extra pendientes en este rango de fechas
+        INSERT INTO PlanillaDetalle (CodPlanilla, CodEmpleado, CodRubro, Cantidad, Monto, BaseCalculo, Porcentaje, FormulaAplicada, UsuarioCreacion)
+        SELECT
+            @CodPlanilla,
+            e.CodEmpleado,
+            r.CodRubro,
+            ISNULL(SUM(he.CantidadHoras), 0),
+            ISNULL(SUM(he.MontoCalculado), 0),
+            ISNULL(SUM(he.MontoCalculado), 0),
+            0.00,
+            'HORAS EXTRA PROCESADAS',
+            @Usuario
+        FROM Empleado e
+        INNER JOIN RubroPlanilla r ON r.Codigo = 'HEX'
+        INNER JOIN HoraExtra he ON e.CodEmpleado = he.CodEmpleado
+        WHERE e.CodEmpresa = @CodEmpresa 
+          AND e.Estado = 'ACTIVO'
+          AND he.Estado = 'PENDIENTE'
+          AND he.Fecha BETWEEN @FechaInicio AND @FechaFin
+        GROUP BY e.CodEmpleado, r.CodRubro
+
+        -- Actualizar estado de horas extra a Procesados
+        UPDATE HoraExtra
+        SET Estado = 'PROCESADO',
+            FechaModificacion = GETDATE(),
+            UsuarioModificacion = @Usuario
+        WHERE Estado = 'PENDIENTE'
+          AND Fecha BETWEEN @FechaInicio AND @FechaFin
+          AND CodEmpleado IN (SELECT CodEmpleado FROM Empleado WHERE CodEmpresa = @CodEmpresa)
+
+        -- 5. Cargar deducciones programadas/voluntarias activas de los empleados
+        -- Creamos tabla temporal para calcular montos exactos amortizados
+        IF OBJECT_ID('tempdb..#DeduccionesCalculadas') IS NOT NULL DROP TABLE #DeduccionesCalculadas
+        
+        CREATE TABLE #DeduccionesCalculadas (
+            CodDeduccionEmpleado INT,
+            CodEmpleado INT,
+            CodRubro INT,
+            BaseCalculo DECIMAL(18,2),
+            Porcentaje DECIMAL(18,4),
+            MontoDeducir DECIMAL(18,2)
+        )
+
+        INSERT INTO #DeduccionesCalculadas (CodDeduccionEmpleado, CodEmpleado, CodRubro, BaseCalculo, Porcentaje, MontoDeducir)
+        SELECT 
+            de.CodDeduccionEmpleado,
+            de.CodEmpleado,
+            de.CodRubro,
+            e.SalarioBase,
+            de.Porcentaje,
+            ROUND(
+                CASE 
+                    -- Si tiene saldo restante y es menor al monto programado, se deduce solo el saldo
+                    WHEN de.SaldoRestante IS NOT NULL AND de.TipoDeduccion = 'MONTO' AND de.Monto > de.SaldoRestante THEN de.SaldoRestante
+                    WHEN de.SaldoRestante IS NOT NULL AND de.TipoDeduccion = 'PORCENTAJE' AND (e.SalarioBase * (de.Porcentaje / 100.00)) > de.SaldoRestante THEN de.SaldoRestante
+                    -- Si no, se deduce lo programado
+                    WHEN de.TipoDeduccion = 'MONTO' THEN de.Monto
+                    ELSE e.SalarioBase * (de.Porcentaje / 100.00)
+                END, 2
+            )
+        FROM DeduccionEmpleado de
+        INNER JOIN Empleado e ON de.CodEmpleado = e.CodEmpleado
+        WHERE e.CodEmpresa = @CodEmpresa
+          AND e.Estado = 'ACTIVO'
+          AND de.Estado = 'ACTIVO'
+
+        -- Insertar en PlanillaDetalle
+        INSERT INTO PlanillaDetalle (CodPlanilla, CodEmpleado, CodRubro, Cantidad, Monto, BaseCalculo, Porcentaje, FormulaAplicada, UsuarioCreacion)
+        SELECT
+            @CodPlanilla,
+            dc.CodEmpleado,
+            dc.CodRubro,
+            1.00,
+            dc.MontoDeducir,
+            dc.BaseCalculo,
+            dc.Porcentaje,
+            'DEDUCCIÓN PROGRAMADA APLICADA',
+            @Usuario
+        FROM #DeduccionesCalculadas dc
+        WHERE dc.MontoDeducir > 0
+
+        -- Amortizar Saldos en DeduccionEmpleado
+        UPDATE de
+        SET de.SaldoRestante = de.SaldoRestante - dc.MontoDeducir,
+            de.Estado = CASE WHEN (de.SaldoRestante - dc.MontoDeducir) <= 0 THEN 'INACTIVO' ELSE 'ACTIVO' END,
+            de.FechaModificacion = GETDATE(),
+            de.UsuarioModificacion = @Usuario
+        FROM DeduccionEmpleado de
+        INNER JOIN #DeduccionesCalculadas dc ON de.CodDeduccionEmpleado = dc.CodDeduccionEmpleado
+        WHERE de.SaldoRestante IS NOT NULL
+
+        DROP TABLE #DeduccionesCalculadas
+
+        -- 6. Bitácora de Auditoría
+        INSERT INTO BitacoraPlanilla (Usuario, Proceso, Detalle)
+        VALUES (@Usuario, 'GENERAR PLANILLA', 'Planilla ID: ' + CAST(@CodPlanilla AS VARCHAR(10)) + ' generada con éxito, incluyendo salarios base, destajos, horas extra y deducciones programadas.')
+
+        COMMIT TRANSACTION;
+        SELECT @CodPlanilla AS CodPlanilla;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE()
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY()
+        DECLARE @ErrorState INT = ERROR_STATE()
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState)
+    END CATCH
+END
+GO
+
+-- PROCESO CALCULAR DEDUCCIÓN CCSS OBRERO
+IF OBJECT_ID('sp_CalcularCCSS') IS NOT NULL DROP PROCEDURE sp_CalcularCCSS
+GO
+
+CREATE PROCEDURE sp_CalcularCCSS
+(
+    @CodPlanilla INT,
+    @Usuario VARCHAR(100)
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Eliminar deducciones CCSS previas para evitar duplicados en reproceso
+        DELETE FROM PlanillaDetalle
+        WHERE CodPlanilla = @CodPlanilla 
+          AND CodRubro = (SELECT CodRubro FROM RubroPlanilla WHERE Codigo = 'CCSS')
+
+        -- Calcular e insertar CCSS basada en la suma de los Devengos
+        INSERT INTO PlanillaDetalle (CodPlanilla, CodEmpleado, CodRubro, Cantidad, Monto, BaseCalculo, Porcentaje, FormulaAplicada, UsuarioCreacion)
+        SELECT
+            @CodPlanilla,
+            x.CodEmpleado,
+            r.CodRubro,
+            1.00,
+            dbo.fn_CalcularCCSS(x.TotalSalario),
+            x.TotalSalario,
+            (SELECT SEMObrero + IVMObrero + BancoPopular FROM ParametroCCSS WHERE GETDATE() BETWEEN VigenciaDesde AND VigenciaHasta AND Estado = 'ACTIVO'),
+            'fn_CalcularCCSS',
+            @Usuario
+        FROM
+        (
+            SELECT
+                pd.CodEmpleado,
+                SUM(pd.Monto) AS TotalSalario
+            FROM PlanillaDetalle pd
+            INNER JOIN RubroPlanilla rp ON pd.CodRubro = rp.CodRubro
+            WHERE pd.CodPlanilla = @CodPlanilla
+              AND rp.Tipo = 'DEVENGO'
+              AND rp.AfectaCCSS = 1
+            GROUP BY pd.CodEmpleado
+        ) x
+        INNER JOIN RubroPlanilla r ON r.Codigo = 'CCSS'
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE()
+        RAISERROR (@ErrorMessage, 16, 1)
+    END CATCH
+END
+GO
+
+-- PROCESO CALCULAR IMPUESTO DE LA RENTA
+IF OBJECT_ID('sp_CalcularRenta') IS NOT NULL DROP PROCEDURE sp_CalcularRenta
+GO
+
+CREATE PROCEDURE sp_CalcularRenta
+(
+    @CodPlanilla INT,
+    @Usuario VARCHAR(100)
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Eliminar retenciones de renta previas para evitar duplicados
+        DELETE FROM PlanillaDetalle
+        WHERE CodPlanilla = @CodPlanilla 
+          AND CodRubro = (SELECT CodRubro FROM RubroPlanilla WHERE Codigo = 'REN')
+
+        -- Calcular e insertar Renta basada en devengos afectables
+        INSERT INTO PlanillaDetalle (CodPlanilla, CodEmpleado, CodRubro, Cantidad, Monto, BaseCalculo, Porcentaje, FormulaAplicada, UsuarioCreacion)
+        SELECT
+            @CodPlanilla,
+            x.CodEmpleado,
+            r.CodRubro,
+            1.00,
+            dbo.fn_CalcularRenta(x.TotalSalario),
+            x.TotalSalario,
+            0.00,
+            'fn_CalcularRenta',
+            @Usuario
+        FROM
+        (
+            SELECT
+                pd.CodEmpleado,
+                SUM(pd.Monto) AS TotalSalario
+            FROM PlanillaDetalle pd
+            INNER JOIN RubroPlanilla rp ON pd.CodRubro = rp.CodRubro
+            WHERE pd.CodPlanilla = @CodPlanilla
+              AND rp.Tipo = 'DEVENGO'
+              AND rp.AfectaRenta = 1
+            GROUP BY pd.CodEmpleado
+        ) x
+        INNER JOIN RubroPlanilla r ON r.Codigo = 'REN'
+        WHERE dbo.fn_CalcularRenta(x.TotalSalario) > 0
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE()
+        RAISERROR (@ErrorMessage, 16, 1)
+    END CATCH
+END
+GO
+
+-- APLICAR PLANILLA (CIERRE DEFINITIVO CON ACUMULACIÓN DE VACACIONES L.C.R.)
+IF OBJECT_ID('sp_AplicarPlanilla') IS NOT NULL DROP PROCEDURE sp_AplicarPlanilla
+GO
+
+CREATE PROCEDURE sp_AplicarPlanilla
+(
+    @CodPlanilla INT,
+    @Usuario VARCHAR(100)
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- 1. Marcar planilla como aplicada
+        UPDATE Planilla
+        SET Estado = 'APLICADA',
+            FechaModificacion = GETDATE(),
+            UsuarioModificacion = @Usuario
+        WHERE CodPlanilla = @CodPlanilla;
+
+        -- 2. Determinar el tipo de planilla y los días a ganar por este ciclo
+        DECLARE @CodTipoPlanilla INT;
+        DECLARE @DiasEarned DECIMAL(18, 4);
+
+        SELECT @CodTipoPlanilla = CodTipoPlanilla 
+        FROM Planilla 
+        WHERE CodPlanilla = @CodPlanilla;
+
+        SET @DiasEarned = CASE 
+            WHEN @CodTipoPlanilla = 1 THEN 12.0 / 52.0  -- Semanal (12 días al año)
+            WHEN @CodTipoPlanilla = 2 THEN 15.0 / 24.0  -- Quincenal (15 días al año)
+            WHEN @CodTipoPlanilla = 3 THEN 15.0 / 12.0  -- Mensual (15 días al año)
+            ELSE 12.0 / 52.0                            -- Destajo / Otros por defecto
+        END;
+
+        -- 3. Cursor para iterar sobre todos los empleados calculados
+        DECLARE @CodEmpleado INT;
+        DECLARE @FechaIngreso DATE;
+
+        DECLARE curEmpleados CURSOR FOR
+        SELECT DISTINCT pd.CodEmpleado, e.FechaIngreso
+        FROM PlanillaDetalle pd
+        INNER JOIN Empleado e ON pd.CodEmpleado = e.CodEmpleado
+        WHERE pd.CodPlanilla = @CodPlanilla;
+
+        OPEN curEmpleados;
+        FETCH NEXT FROM curEmpleados INTO @CodEmpleado, @FechaIngreso;
+
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            -- Determinar el periodo anual actual del empleado según su FechaIngreso
+            DECLARE @YearsWorked INT = DATEDIFF(year, @FechaIngreso, GETDATE());
+            DECLARE @PeriodoInicio DATE = DATEADD(year, @YearsWorked, @FechaIngreso);
+            DECLARE @PeriodoFin DATE = DATEADD(year, @YearsWorked + 1, @FechaIngreso);
+
+            -- Si el periodoInicio es mayor al día de hoy, retroceder un año
+            IF @PeriodoInicio > GETDATE()
+            BEGIN
+                SET @YearsWorked = @YearsWorked - 1;
+                SET @PeriodoInicio = DATEADD(year, @YearsWorked, @FechaIngreso);
+                SET @PeriodoFin = DATEADD(year, @YearsWorked + 1, @FechaIngreso);
+            END
+
+            -- Verificar si ya existe un registro de vacaciones activo para este empleado
+            IF EXISTS (SELECT 1 FROM Vacaciones WHERE CodEmpleado = @CodEmpleado AND Estado = 'ACTIVO')
+            BEGIN
+                -- Actualizar el acumulado y saldo del registro de vacaciones activo
+                UPDATE Vacaciones
+                SET DiasGanados = DiasGanados + @DiasEarned,
+                    Saldo = Saldo + @DiasEarned,
+                    FechaModificacion = GETDATE(),
+                    UsuarioModificacion = @Usuario
+                WHERE CodEmpleado = @CodEmpleado AND Estado = 'ACTIVO';
+            END
+            ELSE
+            BEGIN
+                -- Crear un registro nuevo
+                INSERT INTO Vacaciones (CodEmpleado, PeriodoInicio, PeriodoFin, DiasGanados, DiasTomados, Saldo, Estado, UsuarioCreacion)
+                VALUES (@CodEmpleado, @PeriodoInicio, @PeriodoFin, @DiasEarned, 0.00, @DiasEarned, 'ACTIVO', @Usuario);
+            END
+
+            FETCH NEXT FROM curEmpleados INTO @CodEmpleado, @FechaIngreso;
+        END
+
+        CLOSE curEmpleados;
+        DEALLOCATE curEmpleados;
+
+        -- 4. Registrar en la Bitácora
+        INSERT INTO BitacoraPlanilla (Usuario, Proceso, Detalle)
+        VALUES (@Usuario, 'APLICAR PLANILLA', 'Planilla ID: ' + CAST(@CodPlanilla AS VARCHAR(10)) + ' ha sido aplicada y cerrada. Se acumularon vacaciones de forma proporcional (' + CAST(ROUND(@DiasEarned, 4) AS VARCHAR(15)) + ' dias por colaborador).');
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR (@ErrorMessage, 16, 1);
+    END CATCH
+END
+GO
+
+
+/*===================================================
+ 9. STORED PROCEDURES DE SEGURIDAD (NUEVO)
+===================================================*/
+
+-- SP USUARIO LOGIN
+IF OBJECT_ID('sp_UsuarioLogin') IS NOT NULL DROP PROCEDURE sp_UsuarioLogin
+GO
+
+CREATE PROCEDURE sp_UsuarioLogin
+(
+    @Username VARCHAR(100)
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        u.CodUsuario,
+        u.CodEmpleado,
+        u.Username,
+        u.PasswordHash,
+        u.Correo,
+        u.Rol,
+        u.Estado,
+        e.Nombre + ' ' + e.Apellido1 AS NombreCompleto
+    FROM Usuario u
+    LEFT JOIN Empleado e ON u.CodEmpleado = e.CodEmpleado
+    WHERE (u.Username = @Username OR u.Correo = @Username)
+      AND u.Estado = 'ACTIVO';
+END
+GO
+
+-- SP USUARIO GENERAR TOKEN DE RECUPERACIÓN VIA CORREO
+IF OBJECT_ID('sp_UsuarioGenerarToken') IS NOT NULL DROP PROCEDURE sp_UsuarioGenerarToken
+GO
+
+CREATE PROCEDURE sp_UsuarioGenerarToken
+(
+    @Correo VARCHAR(150),
+    @Token VARCHAR(255),
+    @FechaExpiracion DATETIME,
+    @UsuarioAccion VARCHAR(100)
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        DECLARE @CodUsuario INT;
+        
+        -- Verificar si el correo pertenece a un usuario activo
+        SELECT @CodUsuario = CodUsuario 
+        FROM Usuario 
+        WHERE Correo = @Correo AND Estado = 'ACTIVO';
+        
+        IF @CodUsuario IS NULL
+        BEGIN
+            THROW 50001, 'El correo electrónico no se encuentra registrado o la cuenta está inactiva.', 1;
+        END
+
+        -- Desactivar y anular cualquier token previo que estuviera activo para este usuario
+        UPDATE UsuarioToken
+        SET Estado = 'INACTIVO',
+            FechaModificacion = GETDATE(),
+            UsuarioModificacion = @UsuarioAccion
+        WHERE CodUsuario = @CodUsuario AND Estado = 'ACTIVO';
+
+        -- Insertar el nuevo token de seguridad
+        INSERT INTO UsuarioToken (CodUsuario, Token, FechaExpiracion, Usado, Estado, UsuarioCreacion)
+        VALUES (@CodUsuario, @Token, @FechaExpiracion, 0, 'ACTIVO', @UsuarioAccion);
+
+        -- Registrar en bitácora
+        INSERT INTO BitacoraPlanilla (Usuario, Proceso, Detalle)
+        VALUES (@UsuarioAccion, 'RECUPERAR CLAVE', 'Token de recuperación generado para el usuario ID: ' + CAST(@CodUsuario AS VARCHAR(10)));
+
+        COMMIT TRANSACTION;
+        
+        -- Retornar información para que PHP pueda enviar el correo
+        SELECT 
+            u.Username,
+            u.Correo,
+            e.Nombre AS NombreEmpleado
+        FROM Usuario u
+        LEFT JOIN Empleado e ON u.CodEmpleado = e.CodEmpleado
+        WHERE u.CodUsuario = @CodUsuario;
+
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SP USUARIO VALIDAR TOKEN
+IF OBJECT_ID('sp_UsuarioValidarToken') IS NOT NULL DROP PROCEDURE sp_UsuarioValidarToken
+GO
+
+CREATE PROCEDURE sp_UsuarioValidarToken
+(
+    @Token VARCHAR(255)
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        ut.CodToken,
+        ut.CodUsuario,
+        ut.FechaExpiracion,
+        u.Username,
+        u.Correo
+    FROM UsuarioToken ut
+    INNER JOIN Usuario u ON ut.CodUsuario = u.CodUsuario
+    WHERE ut.Token = @Token 
+      AND ut.Estado = 'ACTIVO' 
+      AND ut.Usado = 0 
+      AND ut.FechaExpiracion > GETDATE();
+END
+GO
+
+-- SP USUARIO RESTABLECER CLAVE
+IF OBJECT_ID('sp_UsuarioRestablecerClave') IS NOT NULL DROP PROCEDURE sp_UsuarioRestablecerClave
+GO
+
+CREATE PROCEDURE sp_UsuarioRestablecerClave
+(
+    @Token VARCHAR(255),
+    @PasswordHash VARCHAR(255),
+    @UsuarioAccion VARCHAR(100)
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        DECLARE @CodUsuario INT;
+        DECLARE @CodToken INT;
+        
+        -- Validar la vigencia del token una vez más
+        SELECT 
+            @CodToken = CodToken,
+            @CodUsuario = CodUsuario
+        FROM UsuarioToken
+        WHERE Token = @Token 
+          AND Estado = 'ACTIVO' 
+          AND Usado = 0 
+          AND FechaExpiracion > GETDATE();
+        
+        IF @CodUsuario IS NULL OR @CodToken IS NULL
+        BEGIN
+            THROW 50002, 'El enlace de recuperación no es válido, ya ha sido utilizado o ha caducado.', 1;
+        END
+
+        -- Actualizar la contraseña del usuario
+        UPDATE Usuario
+        SET PasswordHash = @PasswordHash,
+            FechaModificacion = GETDATE(),
+            UsuarioModificacion = @UsuarioAccion
+        WHERE CodUsuario = @CodUsuario;
+
+        -- Marcar el token como usado e inactivo
+        UPDATE UsuarioToken
+        SET Usado = 1,
+            Estado = 'INACTIVO',
+            FechaModificacion = GETDATE(),
+            UsuarioModificacion = @UsuarioAccion
+        WHERE CodToken = @CodToken;
+
+        -- Registrar en bitácora
+        INSERT INTO BitacoraPlanilla (Usuario, Proceso, Detalle)
+        VALUES (@UsuarioAccion, 'RESTABLECER CLAVE', 'Contraseña restablecida con éxito para el usuario ID: ' + CAST(@CodUsuario AS VARCHAR(10)));
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+
+/*===================================================
+ 10. FIN DEL SCRIPT
+===================================================*/
+
+PRINT 'SISTEMA PLANILLACR: SCRIPT INSTALADO CORRECTAMENTE CON TODA LA ARQUITECTURA DE SEGURIDAD ENTERPRISE.'
+GO

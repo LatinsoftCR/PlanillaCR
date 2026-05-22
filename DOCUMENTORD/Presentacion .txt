@@ -1,0 +1,95 @@
+Su perfil visual entonces sería:
+
+tema oscuro profesional por defecto
+opción clara
+estilo ejecutivo/corporativo
+tipografía limpia y moderna
+poco gráfico innecesario
+enfoque en:
+rapidez
+legibilidad
+tablas
+métricas claras
+dashboards sobrios
+Recomendación UI/UX para el ERP
+Tema
+Default
+
+🌑 Dark Executive
+
+Con:
+
+negro grafito
+gris oscuro
+azul corporativo
+acentos suaves
+Alternativo
+
+☀️ Light Executive
+
+Minimalista.
+
+Tipografías recomendadas
+
+Muy importantes para ERP.
+
+Recomendadas
+Inter
+Segoe UI
+IBM Plex Sans
+Source Sans Pro
+
+Mi favorita para ERP:
+👉 Inter
+
+Filosofía visual
+NO hacer
+
+❌ dashboards llenos de gráficas
+❌ colores fuertes
+❌ animaciones exageradas
+❌ widgets innecesarios
+
+SÍ hacer
+
+✅ DataTables rápidos
+✅ KPIs ejecutivos
+✅ paneles limpios
+✅ modales rápidos
+✅ navegación lateral fija
+✅ foco en productividad
+
+Arquitectura Frontend Recomendada
+Stack
+Área	Tecnología
+Front	PHP
+UI	Bootstrap 5
+Tablas	DataTables
+AJAX	jQuery
+Iconos	FontAwesome
+Tema	CSS custom dark
+Estructura visual recomendada
+┌──────────────────────────┐
+│ Sidebar                  │
+│--------------------------│
+│ Dashboard                │
+│ Empleados                │
+│ Planillas                │
+│ Destajos                 │
+│ Vacaciones               │
+│ Aguinaldos               │
+│ Liquidaciones            │
+│ SICERE                   │
+│ Contabilidad             │
+│ Configuración            │
+└──────────────────────────┘
+
+┌──────────────────────────────────────┐
+│ Topbar                               │
+├──────────────────────────────────────┤
+│                                      │
+│ DataTables                           │
+│ Modales rápidos                      │
+│ KPIs sobrios                         │
+│                                      │
+└──────────────────────────────────────┘
